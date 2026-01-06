@@ -272,6 +272,7 @@ class KeyboardManager {
         static let esc: Int64 = 0x35
         static let j: Int64 = 0x26
         static let k: Int64 = 0x28
+        static let leftBracket: Int64 = 0x21
     }
 
     var englishInputSource: String {
@@ -419,9 +420,11 @@ class KeyboardManager {
 
             let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
             manager.handleJkSequence(keyCode: keyCode, flags: event.flags)
+            let flags = event.flags
+            let isControlPressed = flags.contains(.maskControl)
 
-            if keyCode == KeyboardManager.KeyCode.esc { // ESC key
-                print("ESC key pressed")
+            if keyCode == KeyboardManager.KeyCode.esc || (isControlPressed && keyCode == KeyboardManager.KeyCode.leftBracket) { // ESC key or Ctrl+[
+                print("ESC or Ctrl+[ pressed")
                 // 检查是否应该切换输入法
                 if let delegate = manager.delegate,
                    delegate.shouldSwitchInputSource() {
