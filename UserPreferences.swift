@@ -11,7 +11,6 @@ class UserPreferences {
         static let selectedEnglishInputMethod = "selectedEnglishInputMethod"
         static let useShiftSwitch = "useShiftSwitch"
         static let launchAtLogin = "launchAtLogin"
-        static let useJkSwitch = "useJkSwitch"
     }
     
     // Esc 生效的应用
@@ -55,16 +54,6 @@ class UserPreferences {
         }
     }
 
-    // 是否使用 jk 组合键切换输入法
-    var useJkSwitch: Bool {
-        get {
-            defaults.bool(forKey: Keys.useJkSwitch)
-        }
-        set {
-            defaults.set(newValue, forKey: Keys.useJkSwitch)
-        }
-    }
-    
     // 是否开机启动
     var launchAtLogin: Bool {
         get {

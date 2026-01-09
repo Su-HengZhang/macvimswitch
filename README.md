@@ -10,7 +10,6 @@ MacVimSwitch 是一个 macOS 输入法切换工具，专为 Vim 用户和经常�
 
 - 一次安装，解决多个软件 Vim 中英文切换问题，只需非常简单的配置。这是相比其他方案最大的优势。
 - 按 ESC 键时自动切换到 ABC 英文输入法，可以设置只在指定的多个应用中生效（如 Vscode、Terminal、Obsidian、Cursor、Xcode）
-- 可选：启用 `jk` 连击触发 ESC 切换，更贴近常见 Vim 插入模式映射
 - Shift 键切换 ABC 英文输入法 和 中文/日文/韩文/越南文输入法
   - 可以是任何中文输入法， 如搜狗、讯飞、微信输入法等
   - 使用前建议关闭输入法中的"使用 Shift 切换中英文"选项
@@ -76,7 +75,6 @@ brew install --cask macvimswitch
      - 查看使用说明
      - 选择偏好的中文输入法
      - 开启/关闭 Shift 键切换功能
-     - 开启/关闭 `jk` ESC 模式
      - 选择 Esc 生效的应用（可多选，默认在 Terminal、VSCode、MacVim、windsurf、obsidian、warp 中生效）
      - 开启/关闭开机自动启动
      - 退出应用程序

@@ -46,11 +46,7 @@ class StatusBarManager {
 
         // 获取所有CJKV输入法并添加到子菜单
         if let inputMethods = InputMethodManager.shared.getAvailableCJKVInputMethods() {
-            print("当前保存的中文输入法: \(KeyboardManager.shared.lastInputSource ?? "nil")")
-            print("UserPreferences中的中文输入法: \(UserPreferences.shared.selectedInputMethod ?? "nil")")
-            
             for (sourceId, name) in inputMethods {
-                print("添加CJKV输入法菜单项: \(name) (\(sourceId))")
                 let item = NSMenuItem(
                     title: name,
                     action: #selector(selectCJKVInputMethod(_:)),
@@ -60,7 +56,6 @@ class StatusBarManager {
                 item.representedObject = sourceId
                 // 检查是否是当前选中的输入法
                 if sourceId == KeyboardManager.shared.lastInputSource {
-                    print("设置中文输入法选中状态: \(name) (\(sourceId))")
                     item.state = .on
                 }
                 inputMethodMenu.addItem(item)
@@ -76,10 +71,7 @@ class StatusBarManager {
 
         // 获取所有英文输入法并添加到子菜单
         if let englishInputMethods = InputMethodManager.shared.getAvailableEnglishInputMethods() {
-            print("当前保存的英文输入法: \(KeyboardManager.shared.englishInputSource)")
-            
             for (sourceId, name) in englishInputMethods {
-                print("添加英文输入法菜单项: \(name) (\(sourceId))")
                 let item = NSMenuItem(
                     title: name,
                     action: #selector(selectEnglishInputMethod(_:)),
@@ -89,7 +81,6 @@ class StatusBarManager {
                 item.representedObject = sourceId
                 // 检查是否是当前选中的输入法
                 if sourceId == KeyboardManager.shared.englishInputSource {
-                    print("设置英文输入法选中状态: \(name) (\(sourceId))")
                     item.state = .on
                 }
                 englishInputMethodMenu.addItem(item)
@@ -134,15 +125,6 @@ class StatusBarManager {
         shiftSwitchItem.state = KeyboardManager.shared.useShiftSwitch ? .on : .off
         newMenu.addItem(shiftSwitchItem)
 
-        let jkSwitchItem = NSMenuItem(
-            title: "使用 jk 切换输入法",
-            action: #selector(toggleJkSwitch),
-            keyEquivalent: ""
-        )
-        jkSwitchItem.target = self
-        jkSwitchItem.state = KeyboardManager.shared.useJkSwitch ? .on : .off
-        newMenu.addItem(jkSwitchItem)
-
         newMenu.addItem(NSMenuItem.separator())
 
         // 添加开机启动选项
@@ -176,32 +158,61 @@ class StatusBarManager {
         KeyboardManager.shared.useShiftSwitch = !KeyboardManager.shared.useShiftSwitch
         UserPreferences.shared.useShiftSwitch = KeyboardManager.shared.useShiftSwitch
         updateStatusBarIcon()
-        createAndShowMenu()
-    }
-
-    @objc private func toggleJkSwitch() {
-        KeyboardManager.shared.useJkSwitch = !KeyboardManager.shared.useJkSwitch
-        createAndShowMenu()
+        updateMenuItemStates()
     }
 
     @objc private func selectCJKVInputMethod(_ sender: NSMenuItem) {
         guard let sourceId = sender.representedObject as? String else { return }
-        print("[StatusBarManager] 选择CJKV输入法: \(sourceId)")
         KeyboardManager.shared.setLastInputSource(sourceId)
-        createAndShowMenu()  // 重新创建菜单以更新选中状态
+        updateMenuItemStates()
     }
-    
+
     @objc private func selectEnglishInputMethod(_ sender: NSMenuItem) {
         guard let sourceId = sender.representedObject as? String else { return }
-        print("[StatusBarManager] 选择英文输入法: \(sourceId)")
         KeyboardManager.shared.englishInputSource = sourceId
-        createAndShowMenu()  // 重新创建菜单以更新选中状态
+        updateMenuItemStates()
+    }
+
+    private func updateMenuItemStates() {
+        // 只更新选中状态，不重建整个菜单
+        guard let menu = menu else {
+            createAndShowMenu()
+            return
+        }
+
+        // 更新 Shift 切换状态
+        if let shiftItem = menu.items.first(where: { $0.action == #selector(toggleShiftSwitch) }) {
+            shiftItem.state = KeyboardManager.shared.useShiftSwitch ? .on : .off
+        }
+
+        // 更新开机启动状态
+        if let launchItem = menu.items.first(where: { $0.action == #selector(toggleLaunchAtLogin) }) {
+            launchItem.state = UserPreferences.shared.launchAtLogin ? .on : .off
+        }
+
+        // 更新中文输入法选中状态
+        if let cjkvSubmenu = menu.items.first(where: { $0.title == "选择中文输入法" })?.submenu {
+            for item in cjkvSubmenu.items {
+                if let sourceId = item.representedObject as? String {
+                    item.state = sourceId == KeyboardManager.shared.lastInputSource ? .on : .off
+                }
+            }
+        }
+
+        // 更新英文输入法选中状态
+        if let englishSubmenu = menu.items.first(where: { $0.title == "选择英文输入法" })?.submenu {
+            for item in englishSubmenu.items {
+                if let sourceId = item.representedObject as? String {
+                    item.state = sourceId == KeyboardManager.shared.englishInputSource ? .on : .off
+                }
+            }
+        }
     }
 
     @objc private func toggleLaunchAtLogin() {
         if LaunchManager.shared.toggleLaunchAtLogin() {
-            // 操作成功，重新创建菜单以更新状态
-            createAndShowMenu()
+            // 操作成功，只更新状态
+            updateMenuItemStates()
         } else {
             // 操作失败，显示错误提示
             let alert = NSAlert()

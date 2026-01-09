@@ -3,26 +3,48 @@ import ServiceManagement
 
 class LaunchManager {
     static let shared = LaunchManager()
-    
+
     private init() {
-        // 初始化时同步开机启动状态到 UserPreferences
         UserPreferences.shared.launchAtLogin = isLaunchAtLoginEnabled()
     }
-    
+
     func isLaunchAtLoginEnabled() -> Bool {
         if #available(macOS 13.0, *) {
             return SMAppService.mainApp.status == .enabled
         } else {
-            // 对于旧版本的 macOS，检查登录项
-            if let loginItems = try? FileManager.default.contentsOfDirectory(atPath: "/Users/\(NSUserName())/Library/Application Support/com.apple.backgroundtaskmanagementagent/BackgroundItems.btm") {
-                let isEnabled = loginItems.contains(where: { $0.contains("MacVimSwitch") })
-                print("检查开机启动状态: \(isEnabled)")
-                return isEnabled
+            // 对于旧版本的 macOS，使用 AppleScript 检查登录项
+            let script = """
+                tell application "System Events"
+                    get the name of every login item
+                end tell
+            """
+
+            var error: NSDictionary?
+            if let scriptObject = NSAppleScript(source: script) {
+                let result = scriptObject.executeAndReturnError(&error)
+                if error == nil {
+                    // 结果可能是字符串或列表
+                    let loginItems: String
+                    if result.descriptorType == typeUnicodeText {
+                        loginItems = result.stringValue ?? ""
+                    } else if result.descriptorType == typeAEList {
+                        var items: [String] = []
+                        for i in 0..<result.numberOfItems {
+                            if let item = result.atIndex(i)?.stringValue {
+                                items.append(item)
+                            }
+                        }
+                        loginItems = items.joined(separator: ",")
+                    } else {
+                        loginItems = result.stringValue ?? ""
+                    }
+                    return loginItems.contains("MacVimSwitch")
+                }
             }
             return false
         }
     }
-    
+
     func toggleLaunchAtLogin() -> Bool {
         if #available(macOS 13.0, *) {
             do {
@@ -32,67 +54,42 @@ class LaunchManager {
                 } else {
                     try service.register()
                 }
-                
-                // 验证操作是否成功
                 let newState = isLaunchAtLoginEnabled()
                 UserPreferences.shared.launchAtLogin = newState
                 return true
             } catch {
-                print("设置开机启动失败: \(error)")
                 return false
             }
         } else {
             // 对于旧版本的 macOS，使用 AppleScript
             let bundlePath = Bundle.main.bundlePath
             let currentState = isLaunchAtLoginEnabled()
-            var success = false
+            let script: String
 
             if currentState {
-                // 使用 AppleScript 移除登录项
-                let script = """
+                script = """
                     tell application "System Events"
                         delete login item "MacVimSwitch"
                     end tell
                 """
-
-                var error: NSDictionary?
-                if let scriptObject = NSAppleScript(source: script) {
-                    scriptObject.executeAndReturnError(&error)
-                    if let error = error {
-                        print("Error removing login item: \(error)")
-                    } else {
-                        success = true
-                    }
-                }
             } else {
-                // 使用 AppleScript 添加登录项
-                let script = """
+                script = """
                     tell application "System Events"
                         make new login item at end with properties {path:"\(bundlePath)", hidden:false}
                     end tell
                 """
-
-                var error: NSDictionary?
-                if let scriptObject = NSAppleScript(source: script) {
-                    scriptObject.executeAndReturnError(&error)
-                    if let error = error {
-                        print("Error adding login item: \(error)")
-                    } else {
-                        success = true
-                    }
-                }
             }
 
-            // 验证操作是否成功
+            var error: NSDictionary?
+            var success = false
+            if let scriptObject = NSAppleScript(source: script) {
+                scriptObject.executeAndReturnError(&error)
+                success = error == nil
+            }
+
             let newState = isLaunchAtLoginEnabled()
-            success = success && (newState != currentState)
-            
-            // 更新 UserPreferences
-            if success {
-                UserPreferences.shared.launchAtLogin = newState
-            }
-            
-            return success
+            UserPreferences.shared.launchAtLogin = newState
+            return success && (newState != currentState)
         }
     }
 }
