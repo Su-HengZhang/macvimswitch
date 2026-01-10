@@ -307,12 +307,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, KeyboardManagerDelegate {
     // ================================
 
     /**
-     * 显示初始使用说明
+     * 显示使用说明对话框
      *
      * 在应用程序首次启动时向用户展示使用说明
      * 包含重要配置提示和功能说明
      */
-    private func showInitialInstructions() {
+    func showInstructions() {
         // 创建 NSAlert 实例
         let alert = NSAlert()
 

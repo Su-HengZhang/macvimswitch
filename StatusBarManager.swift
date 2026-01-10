@@ -141,14 +141,14 @@ class StatusBarManager {
         // 使用说明菜单项
         // ================================
 
-        // 创建"使用说明"菜单项，点击后打开 GitHub 项目主页
-        let homepageItem = NSMenuItem(
+        // 创建"使用说明"菜单项，点击后显示使用说明对话框
+        let instructionsItem = NSMenuItem(
             title: "使用说明",              // 菜单显示文本
-            action: #selector(openHomepage), // 点击时调用的方法
+            action: #selector(showInstructions), // 点击时调用的方法
             keyEquivalent: ""                // 无快捷键
         )
-        homepageItem.target = self          // 设置目标为当前实例
-        newMenu.addItem(homepageItem)       // 添加到菜单
+        instructionsItem.target = self          // 设置目标为当前实例
+        newMenu.addItem(instructionsItem)       // 添加到菜单
 
         // 添加分隔线
         newMenu.addItem(NSMenuItem.separator())
@@ -360,16 +360,12 @@ class StatusBarManager {
     // ================================
 
     /**
-     * 打开项目主页
+     * 显示使用说明对话框
      *
-     * 使用系统默认浏览器打开 GitHub 项目页面
+     * 调用 AppDelegate 的 showInstructions 方法显示使用说明
      */
-    @objc private func openHomepage() {
-        // 检查 URL 是否有效
-        if let url = URL(string: "https://github.com/Jackiexiao/macvimswitch") {
-            // 使用 NSWorkspace 打开 URL（系统默认浏览器）
-            NSWorkspace.shared.open(url)
-        }
+    @objc private func showInstructions() {
+        appDelegate?.showInstructions()
     }
 
     /**
